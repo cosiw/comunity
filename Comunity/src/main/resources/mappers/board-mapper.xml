@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="boardSQL">
+	
+	
+	<select id="selectBoardList" resultMap="boardMap">
+		SELECT  B.BID, TITLE, CONTENTS, U.USERID, ACCOUNT_ID, ACCOUNT_TYPE, NICKNAME, QUIT, B.CRTIME, B.MODTIME,
+        case when L.USERID is not null then '1' ELSE '0' END as LIKE_CHECKED
+   		FROM TBOARD as B
+    	INNER JOIN TUSER as U
+        ON B.USERID = U.USERID
+    	LEFT JOIN TLIKE as L 
+        ON B.BID = L.BID AND L.USERID  = #{userid}
+        WHERE B.DELTIME = '0000-00-00 00:00:00'
+        ORDER BY BID DESC
+	</select>
+	 
+	<resultMap type="board" id="boardMap">
+		<id column = "BID" property = "bid"/>
+		<result column = "TITLE" property = "title"/>
+		<result column = "CONTENTS" property = "contents"/>
+		<result column = "LIKE_CHECKED" property = "likeChecked"/>
+		<result column="USERID" property="userid"/>
+		<result column="CRTIME" property="crTime"/>
+		<result column="MODTIME" property="modTime"/>
+		<association property="user" javaType="user">
+			<id column="USERID" property="userid"/>
+			<result column="USERID" property="userid"/>
+			<result column="ACCOUNT_ID" property="accountid"/>
+			<result column="ACCOUNT_TYPE" property="accountType"/>
+			<result column="NICKNAME" property="nickName"/>
+			<result column="QUIT" property="quit"/>
+		</association>
+	</resultMap>
+	
+	
+	
+	<insert id = "insertBoard" parameterType="board">
+		INSERT INTO TBOARD (`TITLE`, `CONTENTS`, `LIKECOUNT`, `USERID`, `CRTIME`) VALUES ( #{title}, #{contents}, 0, #{userid}, NOW())
+	</insert>
+	
+	<update id ="updateBoard" parameterType="board">
+		UPDATE TBOARD SET TITLE = #{title}, CONTENTS = #{contents}, MODTIME = NOW() WHERE BID = #{bid}
+	</update>
+	
+	<delete id="deleteBoard" parameterType="int">
+		UPDATE TBOARD SET DELTIME = NOW() WHERE BID = #{bid}
+	</delete>
+	
+	<insert id ="insertLike" parameterType="like">
+		INSERT INTO TLIKE (`USERID`, `BID`, `CRTIME`) VALUES ( #{userid}, #{bid}, NOW())
+	</insert>
+	
+	<select id="selectLike" resultType="like" parameterType="int">
+		SELECT * FROM TLIKE WHERE USERID = #{userid} AND BID = #{bid}
+	</select>
+	
+	<update id="updateLike" parameterType="int">
+		UPDATE TLIKE SET DELTIME = "0000-00-00 00:00:00" WHERE LIKEID = #{likeid}
+	</update>
+	
+	<update id="updateUnLike" parameterType="int">
+		UPDATE TLIKE SET DELTIME = NOW() WHERE LIKEID = #{likeid} 
+	</update>
+	
+	<select id="checkUserBoard" resultType="int" parameterType="board">
+		SELECT USERID FROM TBOARD WHERE BID = #{bid}
+	</select>
+	
+	<select id="checkUserid" resultType="int" parameterType="int">
+		SELECT USERID FROM TBOARD WHERE BID = #{bid}
+	</select>
+	
+	<update id="addLikeCount" parameterType="int">
+		UPDATE TBOARD SET LIKECOUNT = LIKECOUNT+1 WHERE BID = #{bid}
+	</update>
+	<update id="subLikeCount" parameterType="int">
+		UPDATE TBOARD SET LIKECOUNT = LIKECOUNT-1 WHERE BID = #{bid}
+	</update>
+</mapper>
